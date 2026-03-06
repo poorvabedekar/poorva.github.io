@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Circles in a Circle — Kandinsky</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.11.11/lib/p5.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Josefin+Sans:wght@200;300;400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream: #f0ebe0;
+      --warm-white: #faf7f2;
+      --ink: #1a1a18;
+      --teal: #007a7a;
+      --gold: #c4a84a;
+      --muted: #7a7368;
+      --rule: #ccc4b5;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--warm-white);
+      color: var(--ink);
+      font-family: 'Cormorant Garamond', Georgia, serif;
+    }
+
+    .page {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    /* ── TOP BAR ── */
+    .topbar {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 48px;
+      border-bottom: 1px solid var(--rule);
+      background: var(--cream);
+    }
+    .topbar-label {
+      font-family: 'Josefin Sans', sans-serif;
+      font-weight: 200;
+      font-size: 10px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .topbar-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--teal);
+      opacity: 0.6;
+    }
+
+    /* ── LEFT: CANVAS ── */
+    .canvas-side {
+      background: var(--cream);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 48px;
+      border-right: 1px solid var(--rule);
+      position: relative;
+    }
+
+    #canvas-container canvas {
+      display: block;
+      box-shadow: 0 12px 60px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .cursor-hint {
+      position: absolute;
+      bottom: 28px;
+      left: 0; right: 0;
+      text-align: center;
+      font-family: 'Josefin Sans', sans-serif;
+      font-weight: 200;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      opacity: 0.8;
+    }
+    .cursor-hint::before,
+    .cursor-hint::after {
+      content: '';
+      display: block;
+      width: 30px;
+      height: 1px;
+      background: var(--rule);
+    }
+
+    /* ── RIGHT: INFO PANEL ── */
+    .info-side {
+      padding: 64px 56px 48px 56px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 0;
+      background: var(--warm-white);
+      overflow-y: auto;
+    }
+
+    .year-tag {
+      font-family: 'Josefin Sans', sans-serif;
+      font-weight: 200;
+      font-size: 11px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--teal);
+      margin-bottom: 14px;
+    }
+
+    .painting-title {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: clamp(36px, 4vw, 56px);
+      font-weight: 300;
+      line-height: 1.05;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
+
+    .artist-name {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 18px;
+      font-weight: 400;
+      font-style: italic;
+      color: var(--muted);
+      margin-bottom: 40px;
+    }
+
+    .divider {
+      width: 40px;
+      height: 1px;
+      background: var(--gold);
+      margin-bottom: 36px;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px 32px;
+      margin-bottom: 40px;
+    }
+    .meta-item {}
+    .meta-label {
+      font-family: 'Josefin Sans', sans-serif;
+      font-weight: 300;
+      font-size: 9px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .meta-value {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 15px;
+      font-weight: 400;
+      color: var(--ink);
+      line-height: 1.4;
+    }
+
+    .section-label {
+      font-family: 'Josefin Sans', sans-serif;
+      font-weight: 300;
+      font-size: 9px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .about-text {
+      font-size: 16px;
+      font-weight: 300;
+      line-height: 1.85;
+      color: #3a3830;
+      margin-bottom: 40px;
+    }
+
+    .about-text em {
+      font-style: italic;
+      color: var(--ink);
+    }
+
+    .quote-block {
+      border-left: 2px solid var(--teal);
+      padding: 12px 0 12px 20px;
+      margin-bottom: 40px;
+    }
+    .quote-block p {
+      font-size: 15px;
+      font-style: italic;
+      font-weight: 300;
+      line-height: 1.7;
+      color: var(--muted);
+    }
+    .quote-block cite {
+      display: block;
+      font-size: 11px;
+      font-style: normal;
+      font-family: 'Josefin Sans', sans-serif;
+      font-weight: 200;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--teal);
+      margin-top: 8px;
+    }
+
+    .interaction-box {
+      background: var(--cream);
+      border: 1px solid var(--rule);
+      padding: 20px 24px;
+      border-radius: 2px;
+    }
+    .interaction-box .section-label {
+      margin-bottom: 8px;
+    }
+    .interaction-text {
+      font-size: 15px;
+      font-weight: 300;
+      line-height: 1.7;
+      color: #4a4840;
+    }
+    .interaction-text strong {
+      font-weight: 600;
+      color: var(--teal);
+    }
+
+    /* ── FOOTER ── */
+    .footer {
+      grid-column: 1 / -1;
+      border-top: 1px solid var(--rule);
+      padding: 16px 48px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--cream);
+    }
+    .footer-text {
+      font-family: 'Josefin Sans', sans-serif;
+      font-weight: 200;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    /* fade-in on load */
+    .info-side > * {
+      opacity: 0;
+      transform: translateY(12px);
+      animation: fadeUp 0.6s ease forwards;
+    }
+    .info-side > *:nth-child(1) { animation-delay: 0.1s; }
+    .info-side > *:nth-child(2) { animation-delay: 0.2s; }
+    .info-side > *:nth-child(3) { animation-delay: 0.28s; }
+    .info-side > *:nth-child(4) { animation-delay: 0.36s; }
+    .info-side > *:nth-child(5) { animation-delay: 0.44s; }
+    .info-side > *:nth-child(6) { animation-delay: 0.52s; }
+    .info-side > *:nth-child(7) { animation-delay: 0.6s; }
+    .info-side > *:nth-child(8) { animation-delay: 0.68s; }
+
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 900px) {
+      .page { grid-template-columns: 1fr; }
+      .canvas-side { border-right: none; border-bottom: 1px solid var(--rule); padding: 32px 24px; }
+      .info-side { padding: 40px 28px; }
+      .topbar { padding: 16px 24px; }
+      .footer { padding: 14px 24px; }
+      #canvas-container canvas { width: 100% !important; height: auto !important; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <span class="topbar-label">Interactive Exhibition</span>
+    <div class="topbar-dot"></div>
+    <span class="topbar-label">Geometric Abstraction · Bauhaus · 1923</span>
+  </header>
+
+  <!-- LEFT: p5.js CANVAS -->
+  <section class="canvas-side">
+    <div id="canvas-container"></div>
+    <div class="cursor-hint">Move cursor left &amp; right to play with the beams</div>
+  </section>
+
+  <!-- RIGHT: INFO PANEL -->
+  <section class="info-side">
+    <div class="year-tag">1923 · Oil on Canvas</div>
+    <h1 class="painting-title">Circles<br>in a Circle</h1>
+    <p class="artist-name">Wassily Kandinsky</p>
+    <div class="divider"></div>
+
+    <div class="meta-grid">
+      <div class="meta-item">
+        <div class="meta-label">Medium</div>
+        <div class="meta-value">Oil on canvas</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Dimensions</div>
+        <div class="meta-value">98.7 × 95.6 cm<br><span style="font-size:13px;color:var(--muted);">38.9 × 37.6 in</span></div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Movement</div>
+        <div class="meta-value">Geometric Abstraction</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Location</div>
+        <div class="meta-value">Philadelphia Museum of Art</div>
+      </div>
+    </div>
+
+    <div class="section-label">About the painting</div>
+    <p class="about-text">
+      A compact, closed composition marking a turning point in Kandinsky's practice — the moment 
+      the circle moved to the <em>foreground</em> as his primary subject. Twenty-six overlapping 
+      circles of varying sizes and colours sit within a bold outer ring, many intersected by 
+      fine black lines. Two diagonal beams of teal and gold cross through the centre, 
+      shifting the colour of every circle they touch.
+      <br><br>
+      Painted while teaching at the <em>Bauhaus in Weimar</em>, the work reflects his move away 
+      from spontaneous gesture toward deliberate geometric composition — and his belief that 
+      colour and form could encode emotion, reflecting the harmony of the cosmos.
+    </p>
+
+    <div class="quote-block">
+      <p>"The circle is the synthesis of the greatest oppositions. It combines the concentric 
+      and the excentric in a single form, and in balance."</p>
+      <cite>— Wassily Kandinsky</cite>
+    </div>
+
+    <div class="interaction-box">
+      <div class="section-label">Interaction</div>
+      <p class="interaction-text">
+        <strong>Move your cursor left and right</strong> across the canvas to sweep the two colour beams. 
+        Watch how the teal and gold light interact with the circles beneath — 
+        just as Kandinsky intended: colour transforming colour.
+      </p>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <span class="footer-text">Philadelphia Museum of Art · Permanent Collection</span>
+    <span class="footer-text">Creative Coding · p5.js</span>
+  </footer>
+
+</div>
+
+<script>
+// ── p5.js SKETCH (instance mode so it targets #canvas-container) ──
+new p5(function(p) {
+
+  p.setup = function() {
+    let cnv = p.createCanvas(500, 500);
+    cnv.parent('canvas-container');
+  };
+
+  p.draw = function() {
+    p.background(240, 235, 220);
+
+    drawBeams(p);
+
+    p.push();
+    p.blendMode(p.MULTIPLY);
+
+    // left small blue Circle
+    p.fill(55, 86, 140, 255); p.stroke(0); p.strokeWeight(3);
+    p.ellipse(82, 283, 13);
+
+    // left small red Circle
+    p.fill(290, 8, 29, 255); p.stroke(0); p.strokeWeight(5);
+    p.ellipse(107, 227, 27);
+
+    // left side teal Circle
+    p.fill(102, 167, 161, 255); p.stroke(0); p.strokeWeight(3);
+    p.ellipse(140, 289, 33);
+
+    // bottom coral Circle left
+    p.fill(247, 147, 120, 200); p.stroke(0); p.strokeWeight(0.3);
+    p.ellipse(113, 354, 29);
+
+    // bottom coral Circle centre
+    p.fill(244, 174, 166, 255); p.stroke(0); p.strokeWeight(2);
+    p.ellipse(273, 398, 29);
+
+    // bottom coral Circle right
+    p.fill(201, 95, 111, 220); p.stroke(0); p.strokeWeight(3);
+    p.ellipse(387, 352, 21);
+
+    // bottom red Circle
+    p.fill(290, 8, 29, 255); p.stroke(0); p.strokeWeight(1);
+    p.ellipse(183, 321, 46);
+
+    // small centre teal Circle
+    p.fill(102, 167, 161, 255); p.stroke(0); p.strokeWeight(0.5);
+    p.ellipse(197, 200, 57);
+
+    // Large Pink Circle (Top Left)
+    p.fill(200, 100, 150, 100); p.noStroke();
+    p.ellipse(193, 152, 102);
+
+    // Large PURPLE Circle RIGHT
+    p.fill(133, 23, 115, 200); p.noStroke();
+    p.ellipse(340, 136, 60);
+
+    // Bright Yellow Circle left centre
+    p.fill(232, 203, 98, 255); p.stroke(0); p.strokeWeight(0.2);
+    p.ellipse(198, 277, 114);
+
+    // Red Circle (Center-ish)
+    p.fill(290, 8, 29, 255); p.stroke(0); p.strokeWeight(0.5);
+    p.ellipse(258, 172, 81);
+
+    // centre Green Circle
+    p.fill(93, 113, 59, 180); p.stroke(0); p.strokeWeight(0.1);
+    p.ellipse(237, 262, 143);
+
+    // Red Circle Center
+    p.fill(261, 110, 57, 255); p.stroke(0); p.strokeWeight(3);
+    p.ellipse(231, 227, 53);
+
+    // teal blue Green Circle (Right side)
+    p.fill(11, 117, 87, 180); p.stroke(0); p.strokeWeight(0.1);
+    p.ellipse(336, 227, 117);
+
+    // navy blue small Circle (Right side)
+    p.fill(11, 89, 177, 180); p.stroke(0); p.strokeWeight(1);
+    p.ellipse(383, 235, 44);
+
+    // Bright Yellow Circle (Bottom Right)
+    p.fill(232, 203, 98, 255); p.stroke(0); p.strokeWeight(1);
+    p.ellipse(317, 306, 81);
+
+    // Yellow ochre Circle (Bottom Right)
+    p.fill(224, 181, 87, 255); p.stroke(0); p.strokeWeight(0);
+    p.ellipse(297, 361, 13);
+
+    // small red Circle top
+    p.fill(290, 8, 29, 255); p.stroke(0); p.strokeWeight(3);
+    p.ellipse(231, 65, 11);
+
+    // small red Circle centre
+    p.fill(209, 76, 71, 255); p.stroke(0); p.strokeWeight(0.3);
+    p.ellipse(253, 293, 13);
+
+    // small red Circle bottom
+    p.fill(209, 76, 71, 255); p.stroke(0); p.strokeWeight(1.5);
+    p.ellipse(240, 342, 11);
+
+    // Small Black Dots
+    p.fill(33, 33, 33, 255); p.stroke(0);
+    p.ellipse(207, 353, 8);
+    p.ellipse(231, 227, 13);
+    p.ellipse(338, 330, 22);
+    p.ellipse(303, 158, 33);
+    p.ellipse(339, 198, 21);
+
+    p.pop();
+
+    // Main black ring
+    p.noFill();
+    p.stroke(20, 20, 20);
+    p.strokeWeight(20);
+    p.ellipse(250, 250, 433, 433);
+  };
+
+  function drawBeams(p) {
+    p.noStroke();
+
+    let shift = p.map(p.mouseX, 0, p.width, -70, 70);
+
+    // Teal Beam
+    p.push();
+    p.fill(0, 128, 128, 100);
+    p.translate(p.width / 2, p.height / 2);
+    p.quad(
+      25,  -375,
+      50,  -375,
+      208 + shift,  333,
+      33  + shift,  375
+    );
+    p.pop();
+
+    // Yellowish Beam
+    p.push();
+    p.fill(220, 180, 80, 80);
+    p.translate(p.width / 2, p.height / 2);
+    p.quad(
+      -12,  -375,
+       12,  -375,
+       42  - shift,  375,
+      -125 - shift,  375
+    );
+    p.pop();
+  }
+
+}, document.body);
+</script>
+</body>
+</html>
