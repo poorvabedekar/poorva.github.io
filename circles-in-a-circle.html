@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Circles in a Circle — Kandinsky</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.11.11/lib/p5.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Josefin+Sans:wght@200;300;400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream: #f0ebe0;
+      --warm-white: #faf7f2;
+      --ink: #1a1a18;
+      --teal: #007a7a;
+      --gold: #c4a84a;
+      --muted: #7a7368;
+      --rule: #ccc4b5;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: var(--warm-white);
+      color: var(--ink);
+      font-family: 'Cormorant Garamond', Georgia, serif;
+    }
+
+    .page {
+      height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    /* ── TOP BAR ── */
+    .topbar {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 15px 48px;
+      border-bottom: 1px solid var(--rule);
+      background: var(--cream);
+    }
+    .topbar-label {
+      font-family: 'Josefin Sans', sans-serif;
+      font-weight: 200;
+      font-size: 10px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .topbar-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--teal);
+      opacity: 0.6;
+    }
+
+    /* ── LEFT: CANVAS — locked, no scroll ── */
+    .canvas-side {
+      background: var(--cream);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-right: 1px solid var(--rule);
+      overflow: hidden;
+      position: relative;
+    }
+
+    #canvas-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #canvas-container canvas {
+      display: block;
+      max-width: 100%;
+      max-height: calc(100vh - 100px);
+      box-shadow: 0 12px 60px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .cursor-hint {
+      position: absolute;
+      bottom: 20px;
+      left: 0; right: 0;
+      text-align: center;
+      font-family: 'Josefin Sans', sans-serif;
+      font-weight: 200;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .cursor-hint::before, .cursor-hint::after {
+      content: '';
+      display: block;
+      width: 28px;
+      height: 1px;
+      background: var(--rule);
+    }
+
+    /* ── RIGHT: SCROLLABLE INFO ── */
+    .info-side {
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 44px 52px 48px 52px;
+      background: var(--warm-white);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .info-side::-webkit-scrollbar { width: 4px; }
+    .info-side::-webkit-scrollbar-track { background: transparent; }
+    .info-side::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 2px; }
+
+    .year-tag {
+      font-family: 'Josefin Sans', sans-serif;
+      font-weight: 200;
+      font-size: 11px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--teal);
+      margin-bottom: 12px;
+    }
+
+    .painting-title {
+      font-size: clamp(30px, 3.2vw, 50px);
+      font-weight: 300;
+      line-height: 1.05;
+      color: var(--ink);
+      margin-bottom: 5px;
+    }
+
+    .artist-name {
+      font-size: 17px;
+      font-weight: 400;
+      font-style: italic;
+      color: var(--muted);
+      margin-bottom: 28px;
+    }
+
+    .divider {
+      width: 40px;
+      height: 1px;
+      background: var(--gold);
+      margin-bottom: 28px;
+    }
+
+    /* ── ORIGINAL PAINTING ── */
+    .block-label {
+      font-family: 'Josefin Sans', sans-serif;
+      font-weight: 300;
+      font-size: 9px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .original-wrapper {
+      position: relative;
+      width: 100%;
+      margin-bottom: 8px;
+      border: 1px solid var(--rule);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.10);
+      background: var(--cream);
+      overflow: hidden;
+    }
+    .original-painting {
+      width: 100%;
+      display: block;
+    }
+    .image-caption {
+      font-size: 11.5px;
+      font-style: italic;
+      color: var(--muted);
+      text-align: right;
+      margin-bottom: 30px;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px 24px;
+      margin-bottom: 30px;
+    }
+    .meta-label {
+      font-family: 'Josefin Sans', sans-serif;
+      font-weight: 300;
+      font-size: 9px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 3px;
+    }
+    .meta-value {
+      font-size: 14.5px;
+      font-weight: 400;
+      color: var(--ink);
+      line-height: 1.4;
+    }
+
+    .about-text {
+      font-size: 15px;
+      font-weight: 300;
+      line-height: 1.9;
+      color: #3a3830;
+      margin-bottom: 30px;
+    }
+    .about-text em { font-style: italic; color: var(--ink); }
+
+    .quote-block {
+      border-left: 2px solid var(--teal);
+      padding: 12px 0 12px 20px;
+      margin-bottom: 30px;
+    }
+    .quote-block p {
+      font-size: 15px;
+      font-style: italic;
+      font-weight: 300;
+      line-height: 1.7;
+      color: var(--muted);
+    }
+    .quote-block cite {
+      display: block;
+      font-size: 11px;
+      font-style: normal;
+      font-family: 'Josefin Sans', sans-serif;
+      font-weight: 200;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--teal);
+      margin-top: 8px;
+    }
+
+    .interaction-box {
+      background: var(--cream);
+      border: 1px solid var(--rule);
+      padding: 18px 22px;
+      border-radius: 2px;
+    }
+    .interaction-box .block-label { margin-bottom: 8px; }
+    .interaction-text {
+      font-size: 14.5px;
+      font-weight: 300;
+      line-height: 1.75;
+      color: #4a4840;
+    }
+    .interaction-text strong { font-weight: 600; color: var(--teal); }
+
+    /* ── FOOTER ── */
+    .footer {
+      grid-column: 1 / -1;
+      border-top: 1px solid var(--rule);
+      padding: 13px 48px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--cream);
+    }
+    .footer-text {
+      font-family: 'Josefin Sans', sans-serif;
+      font-weight: 200;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    /* staggered fade-in on right panel */
+    .info-side > * {
+      opacity: 0;
+      transform: translateY(10px);
+      animation: fadeUp 0.5s ease forwards;
+    }
+    .info-side > *:nth-child(1)  { animation-delay: 0.08s; }
+    .info-side > *:nth-child(2)  { animation-delay: 0.15s; }
+    .info-side > *:nth-child(3)  { animation-delay: 0.22s; }
+    .info-side > *:nth-child(4)  { animation-delay: 0.29s; }
+    .info-side > *:nth-child(5)  { animation-delay: 0.36s; }
+    .info-side > *:nth-child(6)  { animation-delay: 0.43s; }
+    .info-side > *:nth-child(7)  { animation-delay: 0.50s; }
+    .info-side > *:nth-child(8)  { animation-delay: 0.57s; }
+    .info-side > *:nth-child(9)  { animation-delay: 0.64s; }
+    .info-side > *:nth-child(10) { animation-delay: 0.71s; }
+
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <span class="topbar-label">Interactive Exhibition</span>
+    <div class="topbar-dot"></div>
+    <span class="topbar-label">Geometric Abstraction · Bauhaus · 1923</span>
+  </header>
+
+  <!-- LEFT: p5.js canvas, fixed -->
+  <section class="canvas-side">
+    <div id="canvas-container"></div>
+    <div class="cursor-hint">Move cursor left &amp; right to animate the beams</div>
+  </section>
+
+  <!-- RIGHT: scrollable info panel -->
+  <section class="info-side">
+
+    <div class="year-tag">1923 · Oil on Canvas</div>
+    <h1 class="painting-title">Circles in a Circle</h1>
+    <p class="artist-name">Wassily Kandinsky</p>
+    <div class="divider"></div>
+
+    <div class="block-label">Original Painting</div>
+    <div class="original-wrapper">
+      <img
+        class="original-painting"
+        src="https://www.wassilykandinsky.net/images/works/247.jpg"
+        alt="Circles in a Circle, 1923 — Wassily Kandinsky"
+      />
+    </div>
+    <p class="image-caption">Philadelphia Museum of Art · Permanent Collection</p>
+
+    <div class="meta-grid">
+      <div>
+        <div class="meta-label">Medium</div>
+        <div class="meta-value">Oil on canvas</div>
+      </div>
+      <div>
+        <div class="meta-label">Dimensions</div>
+        <div class="meta-value">98.7 × 95.6 cm</div>
+      </div>
+      <div>
+        <div class="meta-label">Movement</div>
+        <div class="meta-value">Geometric Abstraction</div>
+      </div>
+      <div>
+        <div class="meta-label">Location</div>
+        <div class="meta-value">Philadelphia Museum of Art</div>
+      </div>
+    </div>
+
+    <div class="block-label">About the Painting</div>
+    <p class="about-text">
+      A compact, closed composition marking a turning point in Kandinsky's practice — the moment
+      the circle moved to the <em>foreground</em> as his primary subject. Twenty-six overlapping
+      circles of varying sizes and colours sit within a bold outer ring, many intersected by
+      fine black lines. Two diagonal beams of teal and gold cross through the centre,
+      shifting the colour of every circle they touch.
+      <br><br>
+      Painted while teaching at the <em>Bauhaus in Weimar</em>, the work reflects his move away
+      from spontaneous gesture toward deliberate geometric composition. In a letter of 1931 to
+      Galka Scheyer, he described it as <em>"the first picture of mine to bring the theme of
+      circles to the foreground."</em>
+    </p>
+
+    <div class="quote-block">
+      <p>"The circle is the synthesis of the greatest oppositions. It combines the concentric
+      and the excentric in a single form, and in balance."</p>
+      <cite>— Wassily Kandinsky</cite>
+    </div>
+
+    <div class="interaction-box">
+      <div class="block-label">Interaction</div>
+      <p class="interaction-text">
+        <strong>Move your cursor left and right</strong> across the canvas to sweep the two colour beams.
+        Watch how the teal and gold light interact with the circles beneath —
+        just as Kandinsky intended: colour transforming colour.
+      </p>
+    </div>
+
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <span class="footer-text">Philadelphia Museum of Art · Permanent Collection</span>
+    <span class="footer-text">Creative Coding · p5.js</span>
+  </footer>
+
+</div>
+
+<script>
+// ── YOUR ORIGINAL sketch.js — UNTOUCHED ──
+// Orbital drift animation — circles move within the black ring,
+// return home after 5-6s, rest 2-3s, then drift again.
+
+// --- CIRCLE DATA ---
+// [x, y, diameter]
+let circles = [
+  [98,  339, 16],   // 0  left small blue
+  [128, 272, 32],   // 1  left small red
+  [168, 346, 40],   // 2  left teal
+  [135, 425, 35],   // 3  bottom coral left
+  [328, 477, 35],   // 4  bottom coral centre
+  [464, 422, 25],   // 5  bottom coral right
+  [220, 385, 55],   // 6  bottom red
+  [236, 240, 68],   // 7  small centre teal
+  [232, 182, 123],  // 8  large pink
+  [408, 163, 72],   // 9  large purple
+  [237, 332, 137],  // 10 bright yellow left
+  [309, 206, 97],   // 11 red centre-ish
+  [284, 314, 171],  // 12 centre green
+  [277, 272, 64],   // 13 red center
+  [403, 272, 140],  // 14 teal green right
+  [459, 282, 53],   // 15 navy blue right
+  [380, 367, 97],   // 16 bright yellow bottom right
+  [356, 433, 16],   // 17 yellow ochre
+  [277, 78,  13],   // 18 small red top
+  [304, 351, 16],   // 19 small red centre
+  [288, 410, 13],   // 20 small red bottom
+];
+
+// Per-circle state
+let offsets = [];   // current {ox, oy} offset from home
+let phases  = [];   // unique sin/cos phase offset per circle
+let speeds  = [];   // drift speed — smaller circles move faster
+let timers  = [];   // each circle tracks its own cycle independently
+
+const RING_CENTER_X = 300;
+const RING_CENTER_Y = 300;
+const RING_RADIUS   = 240; // inner edge of the black ring (~520/2 - strokeWeight/2)
+
+// Phase states per circle
+const STATE_DRIFTING  = 'drifting';
+const STATE_RETURNING = 'returning';
+const STATE_RESTING   = 'resting';
+
+const DRIFT_SECS   = 5.5;
+const RETURN_SECS  = 1.2;  // smooth ease back home
+const REST_SECS    = 2.5;
+
+function setup() {
+  let cnv = createCanvas(600, 600);
+  cnv.parent('canvas-container');
+  frameRate(60);
+
+  for (let i = 0; i < circles.length; i++) {
+    let d = circles[i][2];
+
+    // Smaller diameter → faster speed. Range roughly 0.4 (large) to 1.6 (tiny)
+    let spd = map(d, 13, 171, 1.6, 0.35);
+
+    // Drift radius: how far each circle wanders. Bigger circles wander less.
+    let driftR = map(d, 13, 171, 28, 10);
+
+    // Stagger start times so they don't all move in sync
+    let startOffset = random(0, DRIFT_SECS);
+
+    phases.push(random(TWO_PI));
+    speeds.push(spd);
+    offsets.push({ ox: 0, oy: 0, driftR });
+    timers.push({
+      state: STATE_DRIFTING,
+      elapsed: startOffset,   // stagger
+      returnStartOx: 0,
+      returnStartOy: 0,
+    });
+  }
+}
+
+function getTargetOffset(i, t) {
+  // Lissajous-style path: different x/y frequencies = organic, non-circular drift
+  let { driftR } = offsets[i];
+  let p = phases[i];
+  let s = speeds[i];
+  let ox = sin(t * s + p)          * driftR;
+  let oy = cos(t * s * 0.7 + p)    * driftR * 0.8;
+  return { ox, oy };
+}
+
+function easeInOut(t) {
+  return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+}
+
+function updateTimers(dt) {
+  for (let i = 0; i < circles.length; i++) {
+    let tm = timers[i];
+    tm.elapsed += dt;
+
+    if (tm.state === STATE_DRIFTING) {
+      // Smoothly update offset while drifting
+      let { ox, oy } = getTargetOffset(i, tm.elapsed);
+      offsets[i].ox = ox;
+      offsets[i].oy = oy;
+
+      if (tm.elapsed >= DRIFT_SECS) {
+        // Snapshot where we are so return can lerp from here
+        tm.returnStartOx = offsets[i].ox;
+        tm.returnStartOy = offsets[i].oy;
+        tm.elapsed = 0;
+        tm.state = STATE_RETURNING;
+      }
+
+    } else if (tm.state === STATE_RETURNING) {
+      let progress = constrain(tm.elapsed / RETURN_SECS, 0, 1);
+      let e = easeInOut(progress);
+      offsets[i].ox = lerp(tm.returnStartOx, 0, e);
+      offsets[i].oy = lerp(tm.returnStartOy, 0, e);
+
+      if (tm.elapsed >= RETURN_SECS) {
+        offsets[i].ox = 0;
+        offsets[i].oy = 0;
+        tm.elapsed = 0;
+        tm.state = STATE_RESTING;
+      }
+
+    } else if (tm.state === STATE_RESTING) {
+      if (tm.elapsed >= REST_SECS) {
+        tm.elapsed = 0;
+        tm.state = STATE_DRIFTING;
+      }
+    }
+  }
+}
+
+let lastTime = 0;
+
+function draw() {
+  // Delta time in seconds for frame-rate-independent animation
+  let now  = millis() / 1000;
+  let dt   = now - lastTime;
+  lastTime = now;
+
+  updateTimers(dt);
+
+  background(240, 235, 220);
+  drawBeams();
+
+  push();
+  blendMode(MULTIPLY);
+
+  function wEllipse(i) {
+    let [cx, cy, d] = circles[i];
+    ellipse(cx + offsets[i].ox, cy + offsets[i].oy, d);
+  }
+
+  // left small blue Circle 
+  fill(55, 86, 140, 255); stroke(0); strokeWeight(3);
+  wEllipse(0);
+
+  // left small red Circle with stroke 
+  fill(290, 8, 29, 255); stroke(0); strokeWeight(6);
+  wEllipse(1);
+
+  // left side teal Circle with stroke 
+  fill(102, 167, 161, 255); stroke(0); strokeWeight(4);
+  wEllipse(2);
+
+  // bottom coral Circle left
+  fill(247, 147, 120, 200); stroke(0); strokeWeight(0.3);
+  wEllipse(3);
+
+  // bottom coral Circle
+  fill(244, 174, 166, 255); stroke(0); strokeWeight(2);
+  wEllipse(4);
+
+  // bottom coral Circle RIGHT
+  fill(201, 95, 111, 220); stroke(0); strokeWeight(3);
+  wEllipse(5);
+
+  // bottom red Circle
+  fill(290, 8, 29, 255); stroke(0); strokeWeight(1);
+  wEllipse(6);
+
+  // small centre teal Circle 
+  fill(102, 167, 161, 255); stroke(0); strokeWeight(0.5);
+  wEllipse(7);
+
+  // Large Pink Circle (Top Left)
+  fill(200, 100, 150, 100); noStroke();
+  wEllipse(8);
+
+  // Large PURPLE Circle RIGHT
+  fill(133, 23, 115, 200); noStroke();
+  wEllipse(9);
+
+  // Bright Yellow Circle left centre
+  fill(232, 203, 98, 255); stroke(0); strokeWeight(0.2);
+  wEllipse(10);
+
+  // Red Circle (Center-ish)
+  fill(290, 8, 29, 255); stroke(0); strokeWeight(0.5);
+  wEllipse(11);
+
+  // centre Green Circle 
+  fill(93, 113, 59, 180); stroke(0); strokeWeight(0.1);
+  wEllipse(12);
+
+  // Red Circle Center
+  fill(261, 110, 57, 255); stroke(0); strokeWeight(4);
+  wEllipse(13);
+
+  // teal blue Green Circle (Right side)
+  fill(11, 117, 87, 180); stroke(0); strokeWeight(0.1);
+  wEllipse(14);
+
+  // navy blue small Circle (Right side)
+  fill(11, 89, 177, 180); stroke(0); strokeWeight(1);
+  wEllipse(15);
+
+  // Bright Yellow Circle (Bottom Right)
+  fill(232, 203, 98, 255); stroke(0); strokeWeight(1);
+  wEllipse(16);
+
+  // Yellow ochre Circle (Bottom Right)
+  fill(224, 181, 87, 255); stroke(0); strokeWeight(0.1);
+  wEllipse(17);
+
+  // small red Circle top
+  fill(290, 8, 29, 255); stroke(0); strokeWeight(3);
+  wEllipse(18);
+
+  // small red Circle centre
+  fill(209, 76, 71, 255); stroke(0); strokeWeight(0.3);
+  wEllipse(19);
+
+  // small red Circle bottom 
+  fill(209, 76, 71, 255); stroke(0); strokeWeight(1.5);
+  wEllipse(20);
+
+  // Small Black Dots — fixed, no movement
+  fill(33, 33, 33, 255); stroke(0);
+  ellipse(248, 423, 10);
+  ellipse(277, 272, 16);
+  ellipse(406, 396, 27);
+  ellipse(363, 189, 40);
+  ellipse(407, 238, 25);
+
+  pop();
+
+  // THE MAIN BLACK RING — always on top, always fixed
+  noFill();
+  stroke(20, 20, 20);
+  strokeWeight(24);
+  ellipse(300, 300, 520, 520);
+}
+
+function drawPaperTexture() {
+  for (let i = 0; i < 90000; i++) {
+    let x = random(width);
+    let y = random(height);
+    let n = noise(x * 0.01, y * 0.01) * 255;
+    stroke(n, n, n, 15);
+    strokeWeight(1);
+    point(x, y);
+  }
+}
+
+function drawBeams() {
+  noStroke();
+
+  // Teal Beam
+  push();
+  fill(0, 128, 128, 100);
+  translate(width / 2, height / 2);
+  rotate(radians(-42));
+  quad(
+    30, -450,
+    60, -450,
+    map(mouseX, 0, 500, 250, -400), 400,
+    map(mouseX, 0, 400, 40, -450),  450
+  );
+  pop();
+
+  // Yellowish Beam
+  push();
+  fill(220, 180, 80, 80);
+  translate(width / 2, height / 2);
+  rotate(radians(43));
+  quad(
+    -15, -450,
+     15, -450,
+    map(mouseX, -50, 250, 50, 400), 450,
+    map(mouseX, 0, 300, -150, 250), 450
+  );
+  pop();
+}
+</script>
+</body>
+</html>
