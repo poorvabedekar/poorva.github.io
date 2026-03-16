@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>myTasks ☁️</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{min-height:100vh;background:#F5F0E8;font-family:'Nunito',sans-serif;overflow-x:hidden}
+
+  /* blobs bg */
+  #bg-blobs{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0}
+
+  /* layout */
+  .wrap{position:relative;z-index:5}
+  .center{max-width:660px;margin:0 auto;padding:0 1.25rem}
+  .center-wide{max-width:940px;margin:0 auto;padding:0 1.25rem}
+
+  /* header */
+  #header{position:sticky;top:0;z-index:50;background:rgba(245,240,232,0.92);backdrop-filter:blur(10px);padding:1.1rem 1.25rem 0.75rem}
+  .header-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;max-width:940px;margin-left:auto;margin-right:auto}
+  .logo-area{display:flex;align-items:center;gap:10px}
+  .logo-text{font-weight:900;font-size:1.7rem;color:#1A1A2E;line-height:1;letter-spacing:-0.5px}
+  .logo-text span{color:#FF6B35}
+  .squiggle-wrap{margin-top:2px}
+  .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+  .pending-badge{display:inline-flex;align-items:center;padding:3px 11px;border-radius:999px;font-size:0.68rem;font-weight:800;background:#FF6B35;color:#fff;border:2px solid #FF6B35}
+  #tags-btn{font-family:'Nunito',sans-serif;font-weight:800;font-size:0.75rem;padding:7px 14px;border-radius:999px;border:2px solid #1A1A2E;background:#F5F0E8;color:#1A1A2E;cursor:pointer;transition:all 0.15s}
+  #tags-btn.active{background:#FFD23F;box-shadow:2px 2px 0 #1A1A2E}
+
+  /* nav tabs */
+  .nav-tabs{display:flex;gap:8px;background:rgba(255,255,255,0.6);padding:6px;border-radius:999px;backdrop-filter:blur(8px);box-shadow:0 2px 12px rgba(0,0,0,0.07);max-width:940px;margin:0 auto}
+  .nav-tab{font-family:'Nunito',sans-serif;font-weight:800;font-size:0.9rem;padding:8px 22px;border-radius:999px;border:none;cursor:pointer;background:#F5F0E8;color:#8B8599;transition:all 0.2s;flex:1;text-align:center}
+  .nav-tab.active{background:#1A1A2E;color:#FFD23F;box-shadow:0 4px 16px rgba(26,26,46,0.18)}
+
+  /* cat manager */
+  #cat-manager{display:none;max-width:940px;margin:0.75rem auto 0;padding:0 1.25rem}
+  #cat-manager.open{display:block}
+  .cat-box{background:#fff;border-radius:20px;padding:1rem 1.25rem;box-shadow:0 4px 24px rgba(0,0,0,0.09)}
+  .cat-box-title{font-weight:800;font-size:0.85rem;color:#1A1A2E;margin-bottom:0.6rem}
+  .cat-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:0.6rem}
+  .cat-tag{display:inline-flex;align-items:center;gap:4px;background:#F5F0E8;border-radius:999px;padding:5px 12px;font-size:0.78rem;font-weight:700;border:1.5px solid #ddd;color:#1A1A2E}
+  .cat-tag button{background:none;border:none;cursor:pointer;opacity:0.5;padding:0 2px;font-size:0.75rem;line-height:1}
+  .cat-tag input{width:70px;border:none;outline:none;font-family:'Nunito',sans-serif;font-weight:700;font-size:0.78rem;background:transparent;color:#1A1A2E}
+  .cat-add-row{display:flex;gap:8px}
+  #new-cat-inp{flex:1;padding:7px 14px;border-radius:999px;border:2px solid #ddd;font-family:'Nunito',sans-serif;font-size:0.8rem;font-weight:600;outline:none;background:#F5F0E8;color:#1A1A2E}
+  #new-cat-btn{font-family:'Nunito',sans-serif;font-weight:800;font-size:0.8rem;padding:7px 16px;border-radius:999px;background:#1A1A2E;color:#FFD23F;border:none;cursor:pointer}
+
+  /* view sections */
+  .view{display:none;padding:1rem 0 3rem}
+  .view.active{display:block}
+
+  /* add task card */
+  .add-card{background:#fff;border-radius:24px;padding:1.25rem;margin-bottom:1.25rem;box-shadow:0 6px 28px rgba(0,0,0,0.08)}
+  #task-inp{width:100%;border:none;outline:none;font-family:'Nunito',sans-serif;font-weight:700;font-size:1rem;color:#1A1A2E;margin-bottom:0.875rem;background:transparent;line-height:1.5}
+  #task-inp::placeholder{color:#C8B8F8;font-weight:600}
+  .add-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .pri-btn{padding:4px 12px;border-radius:999px;border:2px solid;font-family:'Nunito',sans-serif;font-weight:800;font-size:0.72rem;cursor:pointer;transition:all 0.15s;background:transparent}
+  .pri-btn.high{border-color:#FF6B35;color:#FF6B35}.pri-btn.high.active{background:#FFF3EE;box-shadow:0 2px 8px #FF6B3540}
+  .pri-btn.medium{border-color:#FFD23F;color:#D4A017}.pri-btn.medium.active{background:#FFFBEE;box-shadow:0 2px 8px #FFD23F40}
+  .pri-btn.low{border-color:#C8B8F8;color:#7B68EE}.pri-btn.low.active{background:#F4F0FF;box-shadow:0 2px 8px #C8B8F840}
+  #cat-select,#dt-inp,#tm-inp{background:#F5F0E8;border:2px solid #ddd;border-radius:999px;padding:4px 12px;font-size:0.72rem;font-family:'Nunito',sans-serif;font-weight:700;cursor:pointer;outline:none;color:#1A1A2E}
+  #add-btn{margin-left:auto;background:#FF6B35;color:#fff;border:none;border-radius:999px;padding:9px 22px;font-family:'Nunito',sans-serif;font-weight:800;font-size:0.85rem;cursor:pointer;box-shadow:0 4px 16px #FF6B3555;transition:transform 0.1s}
+  #add-btn:active{transform:scale(0.96)}
+
+  /* filter tabs */
+  .filter-tabs{display:flex;gap:6px;margin-bottom:1rem}
+  .filter-tab{font-family:'Nunito',sans-serif;font-weight:800;font-size:0.78rem;padding:7px 16px;border-radius:999px;border:none;cursor:pointer;background:#F5F0E8;color:#8B8599;transition:all 0.15s}
+  .filter-tab.active{background:#1A1A2E;color:#FFD23F;box-shadow:0 2px 12px rgba(0,0,0,0.12)}
+
+  /* task items */
+  #task-list{display:flex;flex-direction:column;gap:0.6rem}
+  .task-item{background:#fff;border-radius:18px;padding:0.875rem 1rem;display:flex;align-items:flex-start;gap:12px;box-shadow:0 3px 16px rgba(0,0,0,0.07);border-left:5px solid #ccc;transition:all 0.2s}
+  .task-item.done{background:rgba(255,255,255,0.55);opacity:0.6;box-shadow:none}
+  .task-check{width:24px;height:24px;border-radius:50%;border:2.5px solid #ccc;background:transparent;cursor:pointer;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;padding:0}
+  .task-check.checked{background:var(--dot-color);border-color:var(--dot-color);box-shadow:0 2px 8px var(--dot-color)}
+  .task-body{flex:1;min-width:0}
+  .task-text{font-weight:700;color:#1A1A2E;font-size:0.93rem;margin-bottom:6px;line-height:1.4;transition:all 0.2s}
+  .task-item.done .task-text{text-decoration:line-through;color:#8B8599}
+  .task-pills{display:flex;gap:5px;flex-wrap:wrap}
+  .pill{display:inline-flex;align-items:center;gap:4px;padding:3px 11px;border-radius:999px;font-size:0.7rem;font-weight:800;border:2px solid;line-height:1.4}
+  .task-del{background:transparent;border:none;color:#ccc;cursor:pointer;font-size:1.1rem;padding:0 2px;flex-shrink:0;line-height:1;transition:color 0.15s}
+  .task-del:hover{color:#FF6B35}
+  .task-footer{margin-top:1rem;display:flex;justify-content:space-between;align-items:center}
+  .task-count{color:#8B8599;font-size:0.78rem;font-weight:700}
+  #clear-done{background:none;border:none;color:#FF6B35;font-family:'Nunito',sans-serif;font-weight:700;font-size:0.78rem;cursor:pointer;text-decoration:underline}
+
+  /* empty state */
+  .empty-state{text-align:center;padding:3rem 1rem}
+  .empty-state p{font-weight:800;color:#8B8599;margin-top:12px;font-size:1rem}
+
+  /* matrix */
+  .matrix-header{text-align:center;margin-bottom:1.25rem}
+  .matrix-title{font-weight:900;font-size:1.6rem;color:#1A1A2E;letter-spacing:-0.5px}
+  .matrix-sub{color:#8B8599;font-weight:600;font-size:0.82rem;margin-top:4px}
+  .unassigned-pool{background:#fff;border-radius:24px;padding:1rem 1.25rem;margin-bottom:1.25rem;box-shadow:0 4px 20px rgba(0,0,0,0.07)}
+  .pool-title{font-weight:800;color:#1A1A2E;font-size:0.9rem;margin-bottom:0.625rem;display:flex;align-items:center;gap:6px}
+  .pool-title span{font-weight:600;color:#8B8599;font-size:0.8rem}
+  #pool-chips{display:flex;flex-wrap:wrap;gap:8px}
+  .pool-chip{display:inline-flex;align-items:center;gap:4px;border-radius:14px;padding:7px 14px;font-family:'Nunito',sans-serif;font-weight:700;font-size:0.82rem;color:#1A1A2E;cursor:grab;user-select:none;transition:transform 0.1s,box-shadow 0.1s;border:2px solid}
+  .pool-chip:hover{transform:translateY(-2px)}
+  .pool-chip.dragging{opacity:0.4}
+  .pool-chip .chip-cat{opacity:0.5;font-size:0.7rem;margin-left:4px}
+  .pool-empty{color:#8B8599;font-weight:700;font-size:0.85rem;text-align:center;padding:0.5rem}
+  .matrix-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+  .quad-card{background:#fff;border-radius:24px;padding:1.25rem;min-height:220px;border:2.5px solid transparent;box-shadow:0 4px 20px rgba(0,0,0,0.07);transition:all 0.2s;position:relative;overflow:hidden}
+  .quad-card.drag-over{border-color:var(--qcolor);box-shadow:0 8px 32px var(--qcolor-30)}
+  .quad-ghost{position:absolute;right:-20px;bottom:-20px;opacity:0.15;pointer-events:none;transition:opacity 0.2s}
+  .quad-card.drag-over .quad-ghost{opacity:0.3}
+  .quad-header{display:flex;align-items:flex-start;gap:10px;margin-bottom:0.75rem;position:relative}
+  .quad-info{}
+  .quad-label{font-weight:900;font-size:1rem;line-height:1.1}
+  .quad-short{font-size:0.7rem;font-weight:700;color:#8B8599;margin-top:2px}
+  .quad-pri-pill{display:inline-flex;align-items:center;padding:2px 9px;border-radius:999px;font-size:0.62rem;font-weight:800;border:2px solid;margin-top:4px;line-height:1.4}
+  .drop-hint{border:2px dashed;border-radius:14px;padding:0.875rem;text-align:center;font-size:0.75rem;font-weight:700;opacity:0.6}
+  #quad-tasks-ui,#quad-tasks-uni,#quad-tasks-nui,#quad-tasks-nn{display:flex;flex-direction:column;gap:6px;position:relative;margin-top:6px}
+  .quad-task{border-radius:12px;padding:7px 10px;display:flex;align-items:center;justify-content:space-between;cursor:grab;user-select:none;box-shadow:0 2px 8px rgba(0,0,0,0.06);border:2px solid}
+  .quad-task.dragging{opacity:0.4}
+  .quad-task-text{font-family:'Nunito',sans-serif;font-weight:700;font-size:0.8rem;color:#1A1A2E;flex:1;line-height:1.3}
+  .quad-task-remove{background:none;border:none;color:#ccc;cursor:pointer;font-size:0.9rem;padding:0 2px;flex-shrink:0;transition:color 0.15s}
+  .quad-task-remove:hover{color:#FF6B35}
+  .legend-card{margin-top:1.25rem;background:#fff;border-radius:20px;padding:1rem 1.25rem;box-shadow:0 3px 14px rgba(0,0,0,0.07)}
+  .legend-title{font-weight:800;font-size:0.85rem;color:#1A1A2E;margin-bottom:0.5rem}
+  .legend-pills{display:flex;flex-wrap:wrap;gap:6px}
+
+  @media(max-width:600px){
+    .matrix-grid{grid-template-columns:1fr}
+    .add-row{gap:4px}
+    #add-btn{width:100%;margin-left:0;margin-top:4px}
+  }
+</style>
+</head>
+<body>
+
+<!-- Background decorative blobs -->
+<svg id="bg-blobs" viewBox="0 0 800 900" preserveAspectRatio="xMidYMid slice">
+  <circle cx="720" cy="80"  r="110" fill="#FF6B35" opacity="0.12"/>
+  <circle cx="80"  cy="200" r="90"  fill="#7B68EE" opacity="0.1"/>
+  <circle cx="650" cy="400" r="70"  fill="#4ECDC4" opacity="0.13"/>
+  <circle cx="100" cy="600" r="100" fill="#FFD23F" opacity="0.11"/>
+  <circle cx="750" cy="700" r="80"  fill="#FF85A1" opacity="0.1"/>
+  <circle cx="400" cy="850" r="120" fill="#5B9CF6" opacity="0.09"/>
+</svg>
+
+<div class="wrap">
+  <!-- HEADER -->
+  <div id="header">
+    <div class="header-row">
+      <div class="logo-area">
+        <!-- cloud mascot happy -->
+        <svg width="52" height="37" viewBox="0 0 56 42" fill="none">
+          <ellipse cx="28" cy="30" rx="22" ry="13" fill="#5B9CF6"/>
+          <circle cx="18" cy="24" r="10" fill="#5B9CF6"/>
+          <circle cx="28" cy="20" r="13" fill="#5B9CF6"/>
+          <circle cx="38" cy="24" r="10" fill="#5B9CF6"/>
+          <ellipse cx="28" cy="30" rx="22" ry="13" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+          <circle cx="18" cy="24" r="10" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+          <circle cx="28" cy="20" r="13" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+          <circle cx="38" cy="24" r="10" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+          <ellipse cx="20" cy="28" rx="5" ry="4" fill="#1A1A2E"/>
+          <ellipse cx="36" cy="28" rx="5" ry="4" fill="#1A1A2E"/>
+          <path d="M24 36 Q28 40 32 36" stroke="#1A1A2E" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <circle cx="16" cy="34" r="3" fill="#FF85A1" opacity="0.7"/>
+          <circle cx="40" cy="34" r="3" fill="#FF85A1" opacity="0.7"/>
+        </svg>
+        <div>
+          <div class="logo-text">my<span>tasks</span></div>
+          <svg class="squiggle-wrap" width="100" height="8" viewBox="0 0 100 8" fill="none">
+            <path d="M0 4 Q10 0 20 4 Q30 8 40 4 Q50 0 60 4 Q70 8 80 4 Q90 0 100 4" stroke="#FF6B35" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+          </svg>
+        </div>
+      </div>
+      <div class="header-right">
+        <button id="tags-btn" onclick="toggleCatMgr()">🏷️ tags</button>
+        <span class="pending-badge" id="pending-badge" style="display:none">0 pending ✨</span>
+      </div>
+    </div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="switchView('tasks')" id="tab-tasks">📋 Tasks</button>
+      <button class="nav-tab" onclick="switchView('matrix')" id="tab-matrix">🧩 Matrix</button>
+    </div>
+  </div>
+
+  <!-- CATEGORY MANAGER -->
+  <div id="cat-manager">
+    <div class="cat-box">
+      <div class="cat-box-title">Manage categories</div>
+      <div class="cat-tags" id="cat-tags-list"></div>
+      <div class="cat-add-row">
+        <input id="new-cat-inp" placeholder="New category…" onkeydown="if(event.key==='Enter')addCat()"/>
+        <button id="new-cat-btn" onclick="addCat()">+ Add</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TASKS VIEW -->
+  <div class="view active" id="view-tasks">
+    <div class="center" style="padding-top:1rem">
+
+      <!-- Add Task Card -->
+      <div class="add-card">
+        <input id="task-inp" placeholder="what's on your mind? 💭" onkeydown="if(event.key==='Enter')addTask()"/>
+        <div class="add-row">
+          <button class="pri-btn high" onclick="selectPri('high')" id="pri-high">🔴 high</button>
+          <button class="pri-btn medium active" onclick="selectPri('medium')" id="pri-medium">🟡 medium</button>
+          <button class="pri-btn low" onclick="selectPri('low')" id="pri-low">🟣 low</button>
+          <select id="cat-select"></select>
+          <input type="date" id="dt-inp"/>
+          <input type="time" id="tm-inp"/>
+          <button id="add-btn" onclick="addTask()">+ add ✨</button>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="filter-tabs">
+        <button class="filter-tab active" onclick="setFilter('all')" id="f-all">All</button>
+        <button class="filter-tab" onclick="setFilter('active')" id="f-active">Active ✨</button>
+        <button class="filter-tab" onclick="setFilter('done')" id="f-done">Done ✓</button>
+      </div>
+
+      <!-- Task List -->
+      <div id="task-list"></div>
+
+      <div class="task-footer" id="task-footer" style="display:none">
+        <span class="task-count" id="task-count"></span>
+        <button id="clear-done" onclick="clearDone()">clear done ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MATRIX VIEW -->
+  <div class="view" id="view-matrix">
+    <div class="center-wide" style="padding-top:1rem">
+      <div class="matrix-header">
+        <div class="matrix-title">Eisenhower Matrix</div>
+        <svg style="display:block;margin:4px auto" width="120" height="8" viewBox="0 0 120 8" fill="none">
+          <path d="M0 4 Q12 0 24 4 Q36 8 48 4 Q60 0 72 4 Q84 8 96 4 Q108 0 120 4" stroke="#7B68EE" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+        </svg>
+        <div class="matrix-sub">drag tasks into the right quadrant — priority updates automagically ✨</div>
+      </div>
+
+      <!-- Unassigned pool -->
+      <div class="unassigned-pool">
+        <div class="pool-title">
+          <!-- meh cloud -->
+          <svg width="36" height="26" viewBox="0 0 56 42" fill="none">
+            <ellipse cx="28" cy="30" rx="22" ry="13" fill="#C8B8F8"/>
+            <circle cx="18" cy="24" r="10" fill="#C8B8F8"/>
+            <circle cx="28" cy="20" r="13" fill="#C8B8F8"/>
+            <circle cx="38" cy="24" r="10" fill="#C8B8F8"/>
+            <ellipse cx="28" cy="30" rx="22" ry="13" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+            <circle cx="18" cy="24" r="10" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+            <circle cx="28" cy="20" r="13" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+            <circle cx="38" cy="24" r="10" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+            <path d="M17 28 Q20 25 23 28" stroke="#1A1A2E" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <path d="M33 28 Q36 25 39 28" stroke="#1A1A2E" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <path d="M22 37 L34 37" stroke="#1A1A2E" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="13" cy="32" r="2.5" fill="#FF85A1" opacity="0.5"/>
+            <circle cx="43" cy="32" r="2.5" fill="#FF85A1" opacity="0.5"/>
+          </svg>
+          unassigned tasks <span>(drag into a quadrant)</span>
+        </div>
+        <div id="pool-chips"></div>
+      </div>
+
+      <!-- 2x2 grid -->
+      <div class="matrix-grid">
+        <!-- ui: urgent+important -->
+        <div class="quad-card" id="quad-ui" style="--qcolor:#FF6B35;--qcolor-30:rgba(255,107,53,0.18)"
+          ondragover="quadDragOver(event,'ui')" ondrop="quadDrop(event,'ui')" ondragleave="quadDragLeave('ui')">
+          <div class="quad-ghost">
+            <svg width="90" height="65" viewBox="0 0 56 42" fill="none">
+              <ellipse cx="28" cy="30" rx="22" ry="13" fill="#FF6B35"/>
+              <circle cx="18" cy="24" r="10" fill="#FF6B35"/>
+              <circle cx="28" cy="20" r="13" fill="#FF6B35"/>
+              <circle cx="38" cy="24" r="10" fill="#FF6B35"/>
+              <ellipse cx="28" cy="30" rx="22" ry="13" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+              <circle cx="18" cy="24" r="10" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+              <circle cx="28" cy="20" r="13" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+              <circle cx="38" cy="24" r="10" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+              <ellipse cx="20" cy="28" rx="5" ry="5" fill="#1A1A2E"/><ellipse cx="36" cy="28" rx="5" ry="5" fill="#1A1A2E"/>
+              <ellipse cx="21" cy="26" rx="2" ry="2" fill="white"/><ellipse cx="37" cy="26" rx="2" ry="2" fill="white"/>
+              <path d="M23 36 Q28 42 33 36" stroke="#1A1A2E" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="quad-header">
+            <svg width="44" height="32" viewBox="0 0 56 42" fill="none">
+              <ellipse cx="28" cy="30" rx="22" ry="13" fill="#FF6B35"/>
+              <circle cx="18" cy="24" r="10" fill="#FF6B35"/>
+              <circle cx="28" cy="20" r="13" fill="#FF6B35"/>
+              <circle cx="38" cy="24" r="10" fill="#FF6B35"/>
+              <ellipse cx="28" cy="30" rx="22" ry="13" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+              <circle cx="18" cy="24" r="10" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+              <circle cx="28" cy="20" r="13" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+              <circle cx="38" cy="24" r="10" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+              <ellipse cx="20" cy="28" rx="5" ry="5" fill="#1A1A2E"/><ellipse cx="36" cy="28" rx="5" ry="5" fill="#1A1A2E"/>
+              <ellipse cx="21" cy="26" rx="2" ry="2" fill="white"/><ellipse cx="37" cy="26" rx="2" ry="2" fill="white"/>
+              <path d="M23 36 Q28 42 33 36" stroke="#1A1A2E" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            </svg>
+            <div class="quad-info">
+              <div class="quad-label" style="color:#FF6B35">🔥 Do it Now</div>
+              <div class="quad-short">Urgent · Important</div>
+              <span class="quad-pri-pill" style="color:#FF6B35;border-color:#FF6B35;background:#FFF3EE">→ high priority</span>
+            </div>
+          </div>
+          <div class="drop-hint" id="hint-ui" style="border-color:#FF6B35;color:#FF6B35;background:#FFF3EE">drop tasks here</div>
+          <div id="quad-tasks-ui"></div>
+        </div>
+
+        <!-- uni: urgent not important -->
+        <div class="quad-card" id="quad-uni" style="--qcolor:#FFD23F;--qcolor-30:rgba(255,210,63,0.18)"
+          ondragover="quadDragOver(event,'uni')" ondrop="quadDrop(event,'uni')" ondragleave="quadDragLeave('uni')">
+          <div class="quad-ghost">
+            <svg width="90" height="65" viewBox="0 0 56 42" fill="none">
+              <ellipse cx="28" cy="30" rx="22" ry="13" fill="#FFD23F"/>
+              <circle cx="18" cy="24" r="10" fill="#FFD23F"/>
+              <circle cx="28" cy="20" r="13" fill="#FFD23F"/>
+              <circle cx="38" cy="24" r="10" fill="#FFD23F"/>
+              <ellipse cx="28" cy="30" rx="22" ry="13" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+              <circle cx="18" cy="24" r="10" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+              <circle cx="28" cy="20" r="13" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+              <circle cx="38" cy="24" r="10" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+              <ellipse cx="20" cy="29" rx="4" ry="4" fill="#1A1A2E"/><ellipse cx="36" cy="29" rx="4" ry="4" fill="#1A1A2E"/>
+              <path d="M25 37 Q28 40 31 37" stroke="#1A1A2E" stroke-width="2" fill="none" stroke-linecap="round"/>
+              <circle cx="15" cy="35" r="3" fill="#FF85A1" opacity="0.7"/><circle cx="41" cy="35" r="3" fill="#FF85A1" opacity="0.7"/>
+            </svg>
+          </div>
+          <div class="quad-header">
+            <svg width="44" height="32" viewBox="0 0 56 42" fill="none">
+              <ellipse cx="28" cy="30" rx="22" ry="13" fill="#FFD23F"/>
+              <circle cx="18" cy="24" r="10" fill="#FFD23F"/>
+              <circle cx="28" cy="20" r="13" fill="#FFD23F"/>
+              <circle cx="38" cy="24" r="10" fill="#FFD23F"/>
+              <ellipse cx="28" cy="30" rx="22" ry="13" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+              <circle cx="18" cy="24" r="10" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+              <circle cx="28" cy="20" r="13" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+              <circle cx="38" cy="24" r="10" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+              <ellipse cx="20" cy="29" rx="4" ry="4" fill="#1A1A2E"/><ellipse cx="36" cy="29" rx="4" ry="4" fill="#1A1A2E"/>
+              <path d="M25 37 Q28 40 31 37" stroke="#1A1A2E" stroke-width="2" fill="none" stroke-linecap="round"/>
+              <circle cx="15" cy="35" r="3" fill="#FF85A1" opacity="0.7"/><circle cx="41" cy="35" r="3" fill="#FF85A1" opacity="0.7"/>
+            </svg>
+            <div class="quad-info">
+              <div class="quad-label" style="color:#D4A017">📣 Delegate</div>
+              <div class="quad-short">Urgent · Not Important</div>
+              <span class="quad-pri-pill" style="color:#D4A017;border-color:#FFD23F;background:#FFFBEE">→ medium priority</span>
+            </div>
+          </div>
+          <div class="drop-hint" id="hint-uni" style="border-color:#FFD23F;color:#D4A017;background:#FFFBEE">drop tasks here</div>
+          <div id="quad-tasks-uni"></div>
+        </div>
+
+        <!-- nui: not urgent important -->
+        <div class="quad-card" id="quad-nui" style="--qcolor:#4ECDC4;--qcolor-30:rgba(78,205,196,0.18)"
+          ondragover="quadDragOver(event,'nui')" ondrop="quadDrop(event,'nui')" ondragleave="quadDragLeave('nui')">
+          <div class="quad-ghost">
+            <svg width="90" height="65" viewBox="0 0 56 42" fill="none">
+              <ellipse cx="28" cy="30" rx="22" ry="13" fill="#4ECDC4"/>
+              <circle cx="18" cy="24" r="10" fill="#4ECDC4"/>
+              <circle cx="28" cy="20" r="13" fill="#4ECDC4"/>
+              <circle cx="38" cy="24" r="10" fill="#4ECDC4"/>
+              <ellipse cx="28" cy="30" rx="22" ry="13" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+              <circle cx="18" cy="24" r="10" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+              <circle cx="28" cy="20" r="13" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+              <circle cx="38" cy="24" r="10" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+              <path d="M17 28 Q20 24 23 28" stroke="#1A1A2E" stroke-width="2" fill="none" stroke-linecap="round"/>
+              <path d="M33 28 Q36 24 39 28" stroke="#1A1A2E" stroke-width="2" fill="none" stroke-linecap="round"/>
+              <path d="M23 37 Q28 41 33 37" stroke="#1A1A2E" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+              <circle cx="15" cy="34" r="3" fill="#FF85A1" opacity="0.6"/><circle cx="41" cy="34" r="3" fill="#FF85A1" opacity="0.6"/>
+            </svg>
+          </div>
+          <div class="quad-header">
+            <svg width="44" height="32" viewBox="0 0 56 42" fill="none">
+              <ellipse cx="28" cy="30" rx="22" ry="13" fill="#4ECDC4"/>
+              <circle cx="18" cy="24" r="10" fill="#4ECDC4"/>
+              <circle cx="28" cy="20" r="13" fill="#4ECDC4"/>
+              <circle cx="38" cy="24" r="10" fill="#4ECDC4"/>
+              <ellipse cx="28" cy="30" rx="22" ry="13" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+              <circle cx="18" cy="24" r="10" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+              <circle cx="28" cy="20" r="13" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+              <circle cx="38" cy="24" r="10" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+              <path d="M17 28 Q20 24 23 28" stroke="#1A1A2E" stroke-width="2" fill="none" stroke-linecap="round"/>
+              <path d="M33 28 Q36 24 39 28" stroke="#1A1A2E" stroke-width="2" fill="none" stroke-linecap="round"/>
+              <path d="M23 37 Q28 41 33 37" stroke="#1A1A2E" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+              <circle cx="15" cy="34" r="3" fill="#FF85A1" opacity="0.6"/><circle cx="41" cy="34" r="3" fill="#FF85A1" opacity="0.6"/>
+            </svg>
+            <div class="quad-info">
+              <div class="quad-label" style="color:#4ECDC4">🌿 Schedule It</div>
+              <div class="quad-short">Not Urgent · Important</div>
+              <span class="quad-pri-pill" style="color:#4ECDC4;border-color:#4ECDC4;background:#EEFAF9">→ medium priority</span>
+            </div>
+          </div>
+          <div class="drop-hint" id="hint-nui" style="border-color:#4ECDC4;color:#4ECDC4;background:#EEFAF9">drop tasks here</div>
+          <div id="quad-tasks-nui"></div>
+        </div>
+
+        <!-- nn: neither -->
+        <div class="quad-card" id="quad-nn" style="--qcolor:#C8B8F8;--qcolor-30:rgba(200,184,248,0.18)"
+          ondragover="quadDragOver(event,'nn')" ondrop="quadDrop(event,'nn')" ondragleave="quadDragLeave('nn')">
+          <div class="quad-ghost">
+            <svg width="90" height="65" viewBox="0 0 56 42" fill="none">
+              <ellipse cx="28" cy="30" rx="22" ry="13" fill="#C8B8F8"/>
+              <circle cx="18" cy="24" r="10" fill="#C8B8F8"/>
+              <circle cx="28" cy="20" r="13" fill="#C8B8F8"/>
+              <circle cx="38" cy="24" r="10" fill="#C8B8F8"/>
+              <ellipse cx="28" cy="30" rx="22" ry="13" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+              <circle cx="18" cy="24" r="10" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+              <circle cx="28" cy="20" r="13" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+              <circle cx="38" cy="24" r="10" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+              <path d="M17 28 Q20 25 23 28" stroke="#1A1A2E" stroke-width="2" fill="none" stroke-linecap="round"/>
+              <path d="M33 28 Q36 25 39 28" stroke="#1A1A2E" stroke-width="2" fill="none" stroke-linecap="round"/>
+              <path d="M22 37 L34 37" stroke="#1A1A2E" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="13" cy="32" r="2.5" fill="#FF85A1" opacity="0.5"/><circle cx="43" cy="32" r="2.5" fill="#FF85A1" opacity="0.5"/>
+            </svg>
+          </div>
+          <div class="quad-header">
+            <svg width="44" height="32" viewBox="0 0 56 42" fill="none">
+              <ellipse cx="28" cy="30" rx="22" ry="13" fill="#C8B8F8"/>
+              <circle cx="18" cy="24" r="10" fill="#C8B8F8"/>
+              <circle cx="28" cy="20" r="13" fill="#C8B8F8"/>
+              <circle cx="38" cy="24" r="10" fill="#C8B8F8"/>
+              <ellipse cx="28" cy="30" rx="22" ry="13" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+              <circle cx="18" cy="24" r="10" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+              <circle cx="28" cy="20" r="13" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+              <circle cx="38" cy="24" r="10" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+              <path d="M17 28 Q20 25 23 28" stroke="#1A1A2E" stroke-width="2" fill="none" stroke-linecap="round"/>
+              <path d="M33 28 Q36 25 39 28" stroke="#1A1A2E" stroke-width="2" fill="none" stroke-linecap="round"/>
+              <path d="M22 37 L34 37" stroke="#1A1A2E" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="13" cy="32" r="2.5" fill="#FF85A1" opacity="0.5"/><circle cx="43" cy="32" r="2.5" fill="#FF85A1" opacity="0.5"/>
+            </svg>
+            <div class="quad-info">
+              <div class="quad-label" style="color:#7B68EE">☁️ Let it go</div>
+              <div class="quad-short">Neither</div>
+              <span class="quad-pri-pill" style="color:#7B68EE;border-color:#C8B8F8;background:#F4F0FF">→ low priority</span>
+            </div>
+          </div>
+          <div class="drop-hint" id="hint-nn" style="border-color:#C8B8F8;color:#7B68EE;background:#F4F0FF">drop tasks here</div>
+          <div id="quad-tasks-nn"></div>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div class="legend-card">
+        <div class="legend-title">📖 priority mapping</div>
+        <div class="legend-pills">
+          <span class="pill" style="color:#FF6B35;border-color:#FF6B35;background:#FFF3EE">🔥 Do it Now → high</span>
+          <span class="pill" style="color:#D4A017;border-color:#FFD23F;background:#FFFBEE">📣 Delegate → medium</span>
+          <span class="pill" style="color:#4ECDC4;border-color:#4ECDC4;background:#EEFAF9">🌿 Schedule It → medium</span>
+          <span class="pill" style="color:#7B68EE;border-color:#C8B8F8;background:#F4F0FF">☁️ Let it go → low</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ──
+let todos = [
+  {id:1,text:"Review project proposal",priority:"high",  date:"",time:"",done:false,category:"Work",    quad:null},
+  {id:2,text:"Buy groceries",          priority:"medium",date:"",time:"",done:false,category:"Personal",quad:null},
+  {id:3,text:"Read 20 pages",          priority:"low",   date:"",time:"",done:false,category:"Personal",quad:null},
+];
+let cats = ["Personal","Work","Health","Finance","Other"];
+let currentPri = "medium";
+let currentFilter = "all";
+let dragId = null;
+let editingCatIdx = null;
+let idCtr = Date.now();
+
+const PS = {
+  high:   {color:"#FF6B35",bg:"#FFF3EE",dot:"#FF6B35",emoji:"🔴"},
+  medium: {color:"#D4A017",bg:"#FFFBEE",dot:"#FFD23F",emoji:"🟡"},
+  low:    {color:"#7B68EE",bg:"#F4F0FF",dot:"#C8B8F8",emoji:"🟣"},
+};
+const QUAD_CFG = {
+  ui:  {color:"#FF6B35",bg:"#FFF3EE",pri:"high"},
+  uni: {color:"#D4A017",bg:"#FFFBEE",pri:"medium"},
+  nui: {color:"#4ECDC4",bg:"#EEFAF9",pri:"medium"},
+  nn:  {color:"#7B68EE",bg:"#F4F0FF",pri:"low"},
+};
+
+// ── Helpers ──
+function getTimeLeft(d,t){
+  if(!d)return null;
+  const due=new Date(`${d}T${t||"23:59"}`),diff=due-new Date();
+  if(diff<0)return{label:"Overdue",over:true};
+  const m=Math.floor(diff/60000),h=Math.floor(m/60),days=Math.floor(h/24);
+  if(days>0)return{label:`${days}d left`,over:false};
+  if(h>0)return{label:`${h}h left`,over:false};
+  return{label:`${m}m left`,over:false};
+}
+function pillHtml(bg,color,border,text){
+  return `<span class="pill" style="color:${color};border-color:${border};background:${bg}">${text}</span>`;
+}
+function escapeTxt(t){
+  return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+// ── View switching ──
+function switchView(v){
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  document.getElementById('tab-'+v).classList.add('active');
+  if(v==='matrix')renderMatrix();
+}
+
+// ── Category manager ──
+function toggleCatMgr(){
+  const mgr=document.getElementById('cat-manager');
+  const btn=document.getElementById('tags-btn');
+  mgr.classList.toggle('open');
+  btn.classList.toggle('active');
+  renderCatManager();
+}
+function renderCatManager(){
+  const list=document.getElementById('cat-tags-list');
+  list.innerHTML=cats.map((c,i)=>`
+    <span class="cat-tag" id="cat-tag-${i}">
+      ${editingCatIdx===i
+        ? `<input id="cat-edit-inp" value="${escapeTxt(c)}" onkeydown="if(event.key==='Enter')saveEditCat(${i})" style="width:80px"/><button onclick="saveEditCat(${i})" style="color:#4ECDC4;font-weight:900">✓</button><button onclick="cancelEditCat()">✕</button>`
+        : `${escapeTxt(c)} <button title="edit" onclick="startEditCat(${i})">✏️</button>${cats.length>1?`<button title="delete" onclick="deleteCat(${i})">✕</button>`:''}`
+      }
+    </span>`).join('');
+  if(editingCatIdx!==null){
+    const inp=document.getElementById('cat-edit-inp');
+    if(inp){inp.focus();inp.select();}
+  }
+  rebuildCatSelect();
+}
+function startEditCat(i){editingCatIdx=i;renderCatManager();}
+function cancelEditCat(){editingCatIdx=null;renderCatManager();}
+function saveEditCat(i){
+  const inp=document.getElementById('cat-edit-inp');
+  if(!inp||!inp.value.trim())return;
+  const old=cats[i],nw=inp.value.trim();
+  cats[i]=nw;
+  todos=todos.map(t=>t.category===old?{...t,category:nw}:t);
+  const sel=document.getElementById('cat-select');
+  if(sel&&sel.value===old)sel.value=nw;
+  editingCatIdx=null;
+  renderCatManager();renderTasks();
+}
+function deleteCat(i){
+  const name=cats[i];
+  cats.splice(i,1);
+  todos=todos.map(t=>t.category===name?{...t,category:cats[0]||"Other"}:t);
+  editingCatIdx=null;
+  renderCatManager();renderTasks();
+}
+function addCat(){
+  const inp=document.getElementById('new-cat-inp');
+  const v=inp.value.trim();
+  if(!v||cats.includes(v))return;
+  cats.push(v);inp.value='';
+  renderCatManager();
+}
+function rebuildCatSelect(){
+  const sel=document.getElementById('cat-select');
+  if(!sel)return;
+  const cur=sel.value||cats[0];
+  sel.innerHTML=cats.map(c=>`<option value="${escapeTxt(c)}"${c===cur?' selected':''}>${escapeTxt(c)}</option>`).join('');
+}
+
+// ── Priority select ──
+function selectPri(p){
+  currentPri=p;
+  document.querySelectorAll('.pri-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('pri-'+p).classList.add('active');
+}
+
+// ── Filter ──
+function setFilter(f){
+  currentFilter=f;
+  document.querySelectorAll('.filter-tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('f-'+f).classList.add('active');
+  renderTasks();
+}
+
+// ── Add task ──
+function addTask(){
+  const inp=document.getElementById('task-inp');
+  const text=inp.value.trim();
+  if(!text)return;
+  const cat=document.getElementById('cat-select').value||cats[0];
+  const dt=document.getElementById('dt-inp').value;
+  const tm=document.getElementById('tm-inp').value;
+  todos.unshift({id:++idCtr,text,priority:currentPri,date:dt,time:tm,done:false,category:cat,quad:null});
+  inp.value='';
+  document.getElementById('dt-inp').value='';
+  document.getElementById('tm-inp').value='';
+  renderTasks();renderMatrix();updateBadge();
+}
+
+// ── Toggle done ──
+function toggleDone(id){
+  todos=todos.map(t=>t.id===id?{...t,done:!t.done}:t);
+  renderTasks();renderMatrix();updateBadge();
+}
+
+// ── Remove ──
+function removeTask(id){
+  todos=todos.filter(t=>t.id!==id);
+  renderTasks();renderMatrix();updateBadge();
+}
+
+// ── Clear done ──
+function clearDone(){
+  todos=todos.filter(t=>!t.done);
+  renderTasks();renderMatrix();updateBadge();
+}
+
+// ── Badge ──
+function updateBadge(){
+  const cnt=todos.filter(t=>!t.done).length;
+  const b=document.getElementById('pending-badge');
+  if(cnt>0){b.style.display='inline-flex';b.textContent=cnt+' pending ✨';}
+  else b.style.display='none';
+}
+
+// ── Render tasks ──
+function renderTasks(){
+  const list=document.getElementById('task-list');
+  let filtered=todos.filter(t=>{
+    if(currentFilter==='active')return!t.done;
+    if(currentFilter==='done')return t.done;
+    return true;
+  }).sort((a,b)=>{
+    const po={high:0,medium:1,low:2};
+    if(a.done!==b.done)return a.done?1:-1;
+    return po[a.priority]-po[b.priority];
+  });
+
+  if(filtered.length===0){
+    list.innerHTML=`<div class="empty-state">
+      <svg width="80" height="58" viewBox="0 0 56 42" fill="none">
+        <ellipse cx="28" cy="30" rx="22" ry="13" fill="#C8B8F8"/>
+        <circle cx="18" cy="24" r="10" fill="#C8B8F8"/>
+        <circle cx="28" cy="20" r="13" fill="#C8B8F8"/>
+        <circle cx="38" cy="24" r="10" fill="#C8B8F8"/>
+        <ellipse cx="28" cy="30" rx="22" ry="13" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+        <circle cx="18" cy="24" r="10" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+        <circle cx="28" cy="20" r="13" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+        <circle cx="38" cy="24" r="10" stroke="#1A1A2E" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+        <ellipse cx="20" cy="28" rx="5" ry="4" fill="#1A1A2E"/><ellipse cx="36" cy="28" rx="5" ry="4" fill="#1A1A2E"/>
+        <path d="M24 36 Q28 40 32 36" stroke="#1A1A2E" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <circle cx="16" cy="34" r="3" fill="#FF85A1" opacity="0.7"/><circle cx="40" cy="34" r="3" fill="#FF85A1" opacity="0.7"/>
+      </svg>
+      <p>nothing here! 🎉</p>
+    </div>`;
+    document.getElementById('task-footer').style.display='none';
+    return;
+  }
+
+  list.innerHTML=filtered.map(t=>{
+    const ps=PS[t.priority];
+    const qd=t.quad?QUAD_CFG[t.quad]:null;
+    const tl=t.date?getTimeLeft(t.date,t.time):null;
+    const borderColor=qd?qd.color:ps.dot;
+    const checkStyle=t.done?`background:${ps.dot};border-color:${ps.dot};box-shadow:0 2px 8px ${ps.dot}88`:`border-color:${ps.dot}`;
+    const quadNames={ui:"🔥 Do it Now",uni:"📣 Delegate",nui:"🌿 Schedule It",nn:"☁️ Let it go"};
+
+    return `<div class="task-item${t.done?' done':''}" style="border-left-color:${borderColor}">
+      <button class="task-check${t.done?' checked':''}" style="--dot-color:${ps.dot};${checkStyle}" onclick="toggleDone(${t.id})">
+        ${t.done?`<svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" fill="none"/></svg>`:''}
+      </button>
+      <div class="task-body">
+        <div class="task-text">${escapeTxt(t.text)}</div>
+        <div class="task-pills">
+          ${pillHtml(ps.bg,ps.color,ps.dot,`${ps.emoji} ${t.priority}`)}
+          ${pillHtml('#F5F0E8','#8B8599','#ddd',escapeTxt(t.category))}
+          ${qd?pillHtml(qd.bg,qd.color,qd.color,quadNames[t.quad]):''}
+          ${tl?pillHtml(tl.over?'#FFF0F3':'#F0F0F0',tl.over?'#FF6B35':'#8B8599',tl.over?'#FF6B35':'#ddd',`⏰ ${tl.label}`):''}
+        </div>
+      </div>
+      <button class="task-del" onclick="removeTask(${t.id})">×</button>
+    </div>`;
+  }).join('');
+
+  const footer=document.getElementById('task-footer');
+  const doneCount=todos.filter(t=>t.done).length;
+  footer.style.display='flex';
+  document.getElementById('task-count').textContent=`${doneCount}/${todos.length} done`;
+  updateBadge();
+}
+
+// ── Render matrix ──
+function renderMatrix(){
+  const matrixTasks=todos.filter(t=>!t.done);
+  const unassigned=matrixTasks.filter(t=>!t.quad);
+
+  // pool chips
+  const pool=document.getElementById('pool-chips');
+  if(unassigned.length===0){
+    pool.innerHTML=`<div class="pool-empty">all sorted! 🎉</div>`;
+  } else {
+    pool.innerHTML=unassigned.map(t=>{
+      const ps=PS[t.priority];
+      return `<div class="pool-chip" draggable="true"
+        style="background:${ps.bg};border-color:${ps.dot};box-shadow:0 2px 10px ${ps.dot}30"
+        id="chip-${t.id}"
+        ondragstart="chipDragStart(event,${t.id})"
+        ondragend="chipDragEnd(event,${t.id})"
+        onmouseenter="this.style.transform='translateY(-2px)'"
+        onmouseleave="this.style.transform='none'"
+      >${escapeTxt(t.text)}<span class="chip-cat">(${escapeTxt(t.category)})</span></div>`;
+    }).join('');
+  }
+
+  // quadrant task lists
+  ['ui','uni','nui','nn'].forEach(key=>{
+    const qc=QUAD_CFG[key];
+    const assigned=matrixTasks.filter(t=>t.quad===key);
+    const hint=document.getElementById('hint-'+key);
+    const container=document.getElementById('quad-tasks-'+key);
+    hint.style.display=assigned.length===0?'block':'none';
+    container.innerHTML=assigned.map(t=>`
+      <div class="quad-task" draggable="true"
+        style="background:${qc.bg};border-color:${qc.color}"
+        id="qtask-${t.id}"
+        ondragstart="chipDragStart(event,${t.id})"
+        ondragend="chipDragEnd(event,${t.id})">
+        <span class="quad-task-text">${escapeTxt(t.text)}</span>
+        <button class="quad-task-remove" onclick="unassignTask(${t.id})">×</button>
+      </div>`).join('');
+  });
+}
+
+// ── Drag & drop ──
+function chipDragStart(e,id){
+  dragId=id;
+  e.dataTransfer.effectAllowed='move';
+  setTimeout(()=>{
+    const el=document.getElementById('chip-'+id)||document.getElementById('qtask-'+id);
+    if(el)el.classList.add('dragging');
+  },0);
+}
+function chipDragEnd(e,id){
+  dragId=null;
+  const el=document.getElementById('chip-'+id)||document.getElementById('qtask-'+id);
+  if(el)el.classList.remove('dragging');
+}
+function quadDragOver(e,key){
+  e.preventDefault();
+  const card=document.getElementById('quad-'+key);
+  card.classList.add('drag-over');
+  card.style.background=QUAD_CFG[key].bg;
+}
+function quadDragLeave(key){
+  const card=document.getElementById('quad-'+key);
+  card.classList.remove('drag-over');
+  card.style.background='#fff';
+}
+function quadDrop(e,key){
+  e.preventDefault();
+  if(dragId==null)return;
+  todos=todos.map(t=>t.id===dragId?{...t,quad:key,priority:QUAD_CFG[key].pri}:t);
+  dragId=null;
+  quadDragLeave(key);
+  renderMatrix();renderTasks();
+}
+function unassignTask(id){
+  todos=todos.map(t=>t.id===id?{...t,quad:null}:t);
+  renderMatrix();renderTasks();
+}
+
+// ── Init ──
+rebuildCatSelect();
+renderTasks();
+updateBadge();
+setInterval(renderTasks,60000);
+</script>
+</body>
+</html>
